@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Adoção de Pets</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f7fa;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: auto;
+    }
+
+    .form {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .form input {
+      flex: 1;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+
+    .form button {
+      padding: 10px 15px;
+      border: none;
+      border-radius: 8px;
+      background: #4CAF50;
+      color: white;
+      cursor: pointer;
+    }
+
+    .form button:hover {
+      background: #45a049;
+    }
+
+    .pets {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 15px;
+    }
+
+    .card {
+      background: white;
+      padding: 15px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    .card input {
+      width: 100%;
+      margin-bottom: 5px;
+      padding: 6px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    .actions {
+      margin-top: 10px;
+      display: flex;
+      gap: 10px;
+    }
+
+    .edit { background: #2196F3; color: white; border: none; padding: 8px; border-radius: 6px; cursor: pointer; }
+    .delete { background: #f44336; color: white; border: none; padding: 8px; border-radius: 6px; cursor: pointer; }
+    .save { background: #4CAF50; color: white; border: none; padding: 8px; border-radius: 6px; cursor: pointer; }
+    .cancel { background: gray; color: white; border: none; padding: 8px; border-radius: 6px; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>🐶 Adoção de Pets</h1>
+
+    <div class="form">
+      <input id="nome" placeholder="Nome">
+      <input id="idade" type="number" placeholder="Idade">
+      <input id="tipo" placeholder="Tipo">
+      <button onclick="adicionarPet()">Adicionar</button>
+    </div>
+
+    <div class="pets" id="lista"></div>
+  </div>
+
+  <script>
+    let pets = [];
+    let idAtual = 1;
+
+    function render() {
+      const lista = document.getElementById("lista");
+      lista.innerHTML = "";
+
+      pets.forEach(pet => {
+        const div = document.createElement("div");
+        div.className = "card";
+
+        if (pet.editando) {
+          div.innerHTML = `
+            <input id="nome-${pet.id}" value="${pet.nome}">
+            <input id="idade-${pet.id}" type="number" value="${pet.idade}">
+            <input id="tipo-${pet.id}" value="${pet.tipo}">
+            <div class="actions">
+              <button class="save" onclick="salvarEdicao(${pet.id})">Salvar</button>
+              <button class="cancel" onclick="cancelarEdicao(${pet.id})">Cancelar</button>
+            </div>
+          `;
+        } else {
+          div.innerHTML = `
+            <h3>${pet.nome}</h3>
+            <p>🐾 Tipo: ${pet.tipo}</p>
+            <p>🎂 Idade: ${pet.idade} anos</p>
+            <div class="actions">
+              <button class="edit" onclick="editarPet(${pet.id})">Editar</button>
+              <button class="delete" onclick="removerPet(${pet.id})">Excluir</button>
+            </div>
+          `;
+        }
+
+        lista.appendChild(div);
+      });
+    }
+
+    function adicionarPet() {
+      const nome = document.getElementById("nome").value;
+      const idade = document.getElementById("idade").value;
+      const tipo = document.getElementById("tipo").value;
+
+      if (!nome || !idade || !tipo) {
+        alert("Preencha todos os campos!");
+        return;
+      }
+
+      pets.push({ id: idAtual++, nome, idade, tipo, editando: false });
+      salvarLocal();
+      render();
+
+      document.getElementById("nome").value = "";
+      document.getElementById("idade").value = "";
+      document.getElementById("tipo").value = "";
+    }
+
+    function editarPet(id) {
+      pets.forEach(p => p.editando = false);
+      const pet = pets.find(p => p.id === id);
+      pet.editando = true;
+      render();
+    }
+
+    function salvarEdicao(id) {
+      const pet = pets.find(p => p.id === id);
+
+      const nome = document.getElementById(`nome-${id}`).value;
+      const idade = document.getElementById(`idade-${id}`).value;
+      const tipo = document.getElementById(`tipo-${id}`).value;
+
+      if (!nome || !idade || !tipo) {
+        alert("Preencha tudo!");
+        return;
+      }
+
+      pet.nome = nome;
+      pet.idade = idade;
+      pet.tipo = tipo;
+      pet.editando = false;
+
+      salvarLocal();
+      render();
+    }
+
+    function cancelarEdicao(id) {
+      const pet = pets.find(p => p.id === id);
+      pet.editando = false;
+      render();
+    }
+
+    function removerPet(id) {
+      pets = pets.filter(p => p.id !== id);
+      salvarLocal();
+      render();
+    }
+
+    function salvarLocal() {
+      localStorage.setItem("pets", JSON.stringify(pets));
+    }
+
+    function carregarLocal() {
+      const dados = localStorage.getItem("pets");
+      if (dados) {
+        pets = JSON.parse(dados);
+        idAtual = pets.length > 0 ? Math.max(...pets.map(p => p.id)) + 1 : 1;
+      }
+    }
+
+    carregarLocal();
+    render();
+  </script>
+
+</body>
+</html>
